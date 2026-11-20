@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- KONFIGURASI APLIKASI WEB (PWA & Add to Home Screen) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GeoEvolusi">
+    <meta name="application-name" content="GeoEvolusi">
+    <meta name="theme-color" content="#064e3b">
+    
+    <!-- Inline Web App Manifest (Memaksa Chrome mengenali sebagai Aplikasi) -->
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiR2VvRXZvbHVzaSBTTUFOIDUgQmltYSIsInNob3J0X25hbWUiOiJHZW9Fdm9sdXNpIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwNjRlM2IiLCJ0aGVtZV9jb2xvciI6IiMwNjRlM2IiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCc+PHJlY3Qgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnIHJ4PScyMicgZmlsbD0nJTIzMDY0ZTNiJy8+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzQ1JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPSd3aGl0ZScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnPvCfjI08L3RleHQ+PC9zdmc+Iiwic2l6ZXMiOiIxOTJ4MTkyIDUxMng1MTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCIsInB1cnBvc2UiOiJhbnkgbWFza2FibGUifV19">
+
+    <!-- Ikon Aplikasi SVG Berbasis Data URI (Tidak Perlu File Gambar Terpisah) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23064e3b%22/><text x=%2250%22 y=%2265%22 font-size=%2245%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22>🌍</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23064e3b%22/><text x=%2250%22 y=%2265%22 font-size=%2245%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22>🌍</text></svg>">
+
+    <title>Peta Digital Zona Pengamatan & Geotagging Evolusi - SMAN 5 Kota Bima</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        bio: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        },
+                        info: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Kustomisasi Scrollbar & Animasi Peta */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .zone-poly {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .zone-poly:hover {
+            filter: brightness(0.95);
+            stroke-width: 3.5px;
+        }
+        .zone-active {
+            stroke-width: 4px !important;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.15));
+        }
+        @keyframes pulsePin {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        .pin-marker {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .pin-marker:hover {
+            animation: pulsePin 0.8s infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-bio-100 selection:text-bio-900">
+
+    <!-- Notifikasi Toast Non-Blocking (Pengganti alert) -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Header & Identitas Proyek Kolaborasi -->
+    <header class="bg-gradient-to-r from-bio-900 via-teal-900 to-info-900 text-white shadow-lg border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <!-- Judul Utama -->
+                <div class="flex items-start sm:items-center gap-3.5">
+                    <div class="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shrink-0 shadow-inner">
+                        <i data-lucide="map-pinned" class="w-8 h-8 text-emerald-300"></i>
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <span class="px-2.5 py-0.5 text-xs font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 rounded-full">
+                                SMAN 5 KOTA BIMA • KELAS XII (FASE F)
+                            </span>
+                            <span class="px-2.5 py-0.5 text-xs font-semibold bg-blue-500/20 text-blue-200 border border-blue-400/30 rounded-full">
+                                KOLABORASI BIOLOGI × INFORMATIKA
+                            </span>
+                        </div>
+                        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+                            Peta Digital Zona Pengamatan & Geotagging Spesimen Evolusi
+                        </h1>
+                        <div class="flex items-center gap-3 mt-1">
+                            <p class="text-xs sm:text-sm text-slate-300">
+                                Pemetaan Ekologis Bukti Evolusi (Homologi, Analogi, Variasi Fenotipe) Berbasis Basis Data Terstruktur
+                            </p>
+                            <!-- Tombol Install Aplikasi (Akan muncul otomatis jika didukung browser) -->
+                            <button id="btn-install-app" class="hidden items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-amber-950 text-[11px] font-bold rounded-full shadow-lg transition transform hover:scale-105">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Install App
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigasi Tab Utama -->
+            <nav class="flex flex-wrap gap-2 mt-5 pt-4 border-t border-white/10" aria-label="Menu Utama">
+                <button onclick="switchTab('peta')" id="tab-btn-peta" class="tab-btn active flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white text-slate-900 shadow-sm transition">
+                    <i data-lucide="map" class="w-4 h-4 text-bio-600"></i>
+                    <span>1. Peta Zona & Plot Geotagging</span>
+                </button>
+                <button onclick="switchTab('database')" id="tab-btn-database" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white/80 hover:text-white hover:bg-white/10 transition">
+                    <i data-lucide="table-2" class="w-4 h-4 text-blue-300"></i>
+                    <span>2. Basis Data Spesimen (<span id="badge-count">6</span>)</span>
+                </button>
+                <button onclick="switchTab('kelompok')" id="tab-btn-kelompok" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white/80 hover:text-white hover:bg-white/10 transition">
+                    <i data-lucide="users" class="w-4 h-4 text-amber-300"></i>
+                    <span>3. Pembagian Kelompok & Validasi</span>
+                </button>
+                <button onclick="switchTab('skema')" id="tab-btn-skema" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white/80 hover:text-white hover:bg-white/10 transition">
+                    <i data-lucide="file-code-2" class="w-4 h-4 text-purple-300"></i>
+                    <span>4. Kamus Data & Rubrik Instrumen</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Konten Utama -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ===================================================================== -->
+        <!-- TAB 1: PETA DIGITAL ZONA PENGAMATAN & FORM GEOTAGGING                 -->
+        <!-- ===================================================================== -->
+        <section id="tab-peta" class="tab-content space-y-6">
+            
+            <!-- Baris Ringkasan Statistik Cepat -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+                    <div class="p-3 rounded-xl bg-amber-50 text-amber-600">
+                        <i data-lucide="sun" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500">Zona A (Taman Depan)</p>
+                        <p class="text-lg font-bold text-slate-800"><span id="stat-zn-td">0</span> <span class="text-xs font-normal text-slate-500">Spesimen</span></p>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+                    <div class="p-3 rounded-xl bg-emerald-50 text-emerald-600">
+                        <i data-lucide="trees" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500">Zona B (Hutan Mini)</p>
+                        <p class="text-lg font-bold text-slate-800"><span id="stat-zn-hm">0</span> <span class="text-xs font-normal text-slate-500">Spesimen</span></p>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+                    <div class="p-3 rounded-xl bg-lime-50 text-lime-600">
+                        <i data-lucide="sprout" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500">Zona C (Kebun Praktik)</p>
+                        <p class="text-lg font-bold text-slate-800"><span id="stat-zn-kp">0</span> <span class="text-xs font-normal text-slate-500">Spesimen</span></p>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+                    <div class="p-3 rounded-xl bg-cyan-50 text-cyan-600">
+                        <i data-lucide="droplets" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500">Zona D (Area Lembap)</p>
+                        <p class="text-lg font-bold text-slate-800"><span id="stat-zn-al">0</span> <span class="text-xs font-normal text-slate-500">Spesimen</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid Utama Peta (Kiri) & Detail Zona / Form Input (Kanan) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- Kolom Kiri (7 Kolom): Peta Denah Digital SMAN 5 Kota Bima -->
+                <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <i data-lucide="compass" class="w-5 h-5 text-bio-600"></i>
+                                Denah Zonasi Ekologis SMAN 5 Kota Bima
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">
+                                Klik pada <strong>Zona</strong> untuk detail mikroklimat, atau klik <strong>titik lokasi mana pun</strong> di dalam zona untuk menempatkan Pin Geotagging.
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="resetZoneFilter()" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-200/70 hover:bg-slate-200 text-slate-700 transition">
+                                Semua Zona
+                            </button>
+                            <button onclick="openInputModalWithCurrentCoord()" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-bio-600 hover:bg-bio-700 text-white shadow-sm flex items-center gap-1.5 transition">
+                                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                                Input Spesimen
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Legenda Peta -->
+                    <div class="px-4 py-2.5 bg-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="inline-flex items-center gap-1.5 font-medium text-slate-600">
+                                <span class="w-3 h-3 rounded-sm bg-amber-300 border border-amber-500"></span> ZN-TD: Taman Depan
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 font-medium text-slate-600">
+                                <span class="w-3 h-3 rounded-sm bg-emerald-300 border border-emerald-600"></span> ZN-HM: Hutan Mini
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 font-medium text-slate-600">
+                                <span class="w-3 h-3 rounded-sm bg-lime-300 border border-lime-600"></span> ZN-KP: Kebun Praktik
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 font-medium text-slate-600">
+                                <span class="w-3 h-3 rounded-sm bg-cyan-300 border border-cyan-600"></span> ZN-AL: Area Lembap
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2 text-[11px] text-slate-500 font-mono">
+                            <i data-lucide="crosshair" class="w-3.5 h-3.5 text-info-600"></i>
+                            <span id="live-coord-display">-8.454210, 118.726450</span>
+                        </div>
+                    </div>
+
+                    <!-- Kanvas SVG Peta Sekolah Interaktif -->
+                    <div class="relative w-full bg-slate-100 p-2 sm:p-4 select-none">
+                        <svg id="school-map-svg" viewBox="0 0 800 540" class="w-full h-auto rounded-xl border border-slate-300 bg-[#f8fafc] shadow-inner cursor-crosshair">
+                            <!-- Grid Koordinat GIS Latar Belakang -->
+                            <defs>
+                                <pattern id="gis-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+                                </pattern>
+                                <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                                    <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+                                </filter>
+                            </defs>
+                            <rect width="800" height="540" fill="url(#gis-grid)" />
+
+                            <!-- Label Koordinat Tepi (Simulasi Georeferensi Kota Bima) -->
+                            <text x="12" y="18" font-family="JetBrains Mono" font-size="10" fill="#64748b">8°27'14"S 118°43'34"E</text>
+                            <text x="645" y="18" font-family="JetBrains Mono" font-size="10" fill="#64748b">8°27'14"S 118°43'38"E</text>
+                            <text x="12" y="530" font-family="JetBrains Mono" font-size="10" fill="#64748b">8°27'17"S 118°43'34"E</text>
+
+                            <!-- Arah Mata Angin (Kompas) -->
+                            <g transform="translate(755, 55)">
+                                <circle cx="0" cy="0" r="22" fill="white" stroke="#cbd5e1" stroke-width="1.5"/>
+                                <polygon points="0,-16 5,0 0,-4 -5,0" fill="#ef4444"/>
+                                <polygon points="0,16 5,0 0,4 -5,0" fill="#64748b"/>
+                                <text x="0" y="-25" text-anchor="middle" font-size="10" font-weight="bold" fill="#334155">U</text>
+                            </g>
+
+                            <!-- Jalan Raya & Gerbang Utama (Selatan / Bawah) -->
+                            <rect x="20" y="485" width="760" height="32" rx="6" fill="#cbd5e1"/>
+                            <line x1="20" y1="501" x2="780" y2="501" stroke="#ffffff" stroke-width="2" stroke-dasharray="12,8"/>
+                            <text x="400" y="505" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">JALAN RAYA UTAMA & GERBANG SMAN 5 KOTA BIMA</text>
+
+                            <!-- Gedung-Gedung Sekolah (Non-Zona Observasi) -->
+                            <!-- Gedung Kelas Utama (Tengah) -->
+                            <rect x="260" y="185" width="280" height="65" rx="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+                            <text x="400" y="215" text-anchor="middle" font-size="12" font-weight="bold" fill="#475569">GEDUNG RUANG KELAS XII & XI</text>
+                            <text x="400" y="232" text-anchor="middle" font-size="10" fill="#64748b">Koridor Utama & Ruang Guru</text>
+
+                            <!-- Lab Biologi & Lab Komputer (Barat) -->
+                            <rect x="55" y="195" width="165" height="90" rx="8" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
+                            <text x="137" y="235" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">LAB BIOLOGI &</text>
+                            <text x="137" y="250" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">LAB INFORMATIKA</text>
+                            <text x="137" y="266" text-anchor="middle" font-size="9" fill="#3b82f6">Basecamp Pengolahan Data</text>
+
+                            <!-- Lapangan Upacara / Olahraga (Tengah Bawah) -->
+                            <rect x="275" y="275" width="250" height="105" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,4"/>
+                            <text x="400" y="330" text-anchor="middle" font-size="12" font-weight="bold" fill="#64748b">LAPANGAN UPACARA & OLAHRAGA</text>
+
+                            <!-- =============================================================== -->
+                            <!-- 4 ZONA PENGAMATAN EKOLOGIS (INTERAKTIF)                         -->
+                            <!-- =============================================================== -->
+
+                            <!-- ZONA A: TAMAN DEPAN (ZN-TD) - Depan Gerbang & Lapangan -->
+                            <g id="zone-group-ZN-TD" onclick="selectZone('ZN-TD', event)">
+                                <rect id="poly-ZN-TD" x="170" y="395" width="460" height="78" rx="14" 
+                                      fill="#fef3c7" stroke="#d97706" stroke-width="2.5" class="zone-poly"/>
+                                <text x="400" y="425" text-anchor="middle" font-size="13" font-weight="800" fill="#92400e">ZONA A: TAMAN DEPAN (ZN-TD)</text>
+                                <text x="400" y="443" text-anchor="middle" font-size="10.5" fill="#b45309">Cahaya Penuh • Kamboja, Bougenville, Asoka, Kupu-kupu & Lebah</text>
+                                <rect x="345" y="450" width="110" height="17" rx="8" fill="#d97706"/>
+                                <text x="400" y="462" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#ffffff">Klik Plot / Detail</text>
+                            </g>
+
+                            <!-- ZONA B: AREA PEPOHONAN / HUTAN MINI (ZN-HM) - Timur / Kanan -->
+                            <g id="zone-group-ZN-HM" onclick="selectZone('ZN-HM', event)">
+                                <rect id="poly-ZN-HM" x="565" y="45" width="195" height="335" rx="16" 
+                                      fill="#d1fae5" stroke="#059669" stroke-width="2.5" class="zone-poly"/>
+                                <text x="662" y="80" text-anchor="middle" font-size="13" font-weight="800" fill="#065f46">ZONA B: HUTAN MINI</text>
+                                <text x="662" y="96" text-anchor="middle" font-size="12" font-weight="700" fill="#047857">(ZN-HM)</text>
+                                <text x="662" y="122" text-anchor="middle" font-size="10" fill="#065f46">Kanopi Rindang • Pohon Besar,</text>
+                                <text x="662" y="136" text-anchor="middle" font-size="10" fill="#065f46">Paku-pakuan, Lumut & Burung</text>
+                                <!-- Ikon Pohon Dekoratif -->
+                                <circle cx="615" cy="185" r="18" fill="#10b981" opacity="0.35"/>
+                                <circle cx="705" cy="215" r="22" fill="#059669" opacity="0.3"/>
+                                <circle cx="635" cy="275" r="20" fill="#10b981" opacity="0.35"/>
+                                <circle cx="700" cy="320" r="16" fill="#059669" opacity="0.3"/>
+                            </g>
+
+                            <!-- ZONA C: KEBUN PRAKTIK / GREEN BOX (ZN-KP) - Utara / Atas Tengah -->
+                            <g id="zone-group-ZN-KP" onclick="selectZone('ZN-KP', event)">
+                                <rect id="poly-ZN-KP" x="255" y="45" width="290" height="120" rx="16" 
+                                      fill="#ecfccb" stroke="#65a30d" stroke-width="2.5" class="zone-poly"/>
+                                <text x="400" y="78" text-anchor="middle" font-size="13" font-weight="800" fill="#3f6212">ZONA C: KEBUN PRAKTIK / GREEN BOX (ZN-KP)</text>
+                                <text x="400" y="96" text-anchor="middle" font-size="10.5" fill="#4d7c0f">Hortikultura & Tabulampot • Variasi Fenotipe Tanaman & Serangga</text>
+                                <!-- Bedengan Kebun Dekoratif -->
+                                <rect x="285" y="112" width="65" height="35" rx="4" fill="#84cc16" opacity="0.35"/>
+                                <rect x="368" y="112" width="65" height="35" rx="4" fill="#84cc16" opacity="0.35"/>
+                                <rect x="450" y="112" width="65" height="35" rx="4" fill="#84cc16" opacity="0.35"/>
+                            </g>
+
+                            <!-- ZONA D: AREA LEMBAP / SALURAN AIR & KOLAM (ZN-AL) - Barat Laut & Barat Daya -->
+                            <g id="zone-group-ZN-AL" onclick="selectZone('ZN-AL', event)">
+                                <path id="poly-ZN-AL" d="M 45,45 H 235 V 175 H 45 Z M 45,305 H 235 V 380 H 45 Z" 
+                                      fill="#cffafe" stroke="#0891b2" stroke-width="2.5" class="zone-poly"/>
+                                <!-- Aliran Saluran Air & Kolam -->
+                                <path d="M 35,45 V 465" stroke="#06b6d4" stroke-width="8" stroke-linecap="round" opacity="0.55"/>
+                                <ellipse cx="140" cy="135" rx="45" ry="20" fill="#22d3ee" opacity="0.45" stroke="#0891b2" stroke-width="1"/>
+                                <text x="140" y="75" text-anchor="middle" font-size="12.5" font-weight="800" fill="#155e75">ZONA D: AREA LEMBAP</text>
+                                <text x="140" y="91" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0e7490">(ZN-AL)</text>
+                                <text x="140" y="108" text-anchor="middle" font-size="9.5" fill="#155e75">Kolam & Saluran Air • Talas, Lumut, Siput</text>
+                                
+                                <text x="140" y="336" text-anchor="middle" font-size="11" font-weight="800" fill="#155e75">ZONA D2: DRAINASE LEMBAP</text>
+                                <text x="140" y="353" text-anchor="middle" font-size="9.5" fill="#0e7490">Kelembapan Tinggi • Amfibi & Paku Air</text>
+                            </g>
+
+                            <!-- Layer Pin Spesimen Geotagging (Di-render via JS) -->
+                            <g id="pins-layer"></g>
+
+                            <!-- Marker Preview Titik Klik Baru -->
+                            <g id="temp-click-marker" style="display: none;">
+                                <circle cx="0" cy="0" r="10" fill="#ef4444" fill-opacity="0.25" stroke="#ef4444" stroke-width="2"/>
+                                <circle cx="0" cy="0" r="4" fill="#dc2626"/>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- Footer Petunjuk Singkat Peta -->
+                    <div class="px-4 py-3 bg-slate-50 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-info-100 text-info-700 font-bold">i</span>
+                            <span>Tip: Klik langsung pada area berwarna di peta untuk otomatis mengisi koordinat & kode zona spesimen baru.</span>
+                        </div>
+                        <button onclick="useRealDeviceGPS()" class="text-info-700 hover:text-info-800 font-semibold inline-flex items-center gap-1 underline">
+                            <i data-lucide="locate-fixed" class="w-3.5 h-3.5"></i>
+                            Ambil GPS Perangkat Nyata
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Kolom Kanan (5 Kolom): Panel Detail Zona & Daftar Spesimen Zona Terpilih -->
+                <div class="lg:col-span-5 space-y-5">
+                    
+                    <!-- Kartu Detail Zona Aktif -->
+                    <div id="zone-detail-card" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div id="zone-detail-header" class="p-4 sm:p-5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+                            <div class="flex items-center justify-between">
+                                <span id="zd-badge" class="px-2.5 py-0.5 text-xs font-mono font-bold bg-white/20 rounded-lg">SEMUA ZONA</span>
+                                <span id="zd-groups" class="text-xs font-medium bg-black/20 px-2.5 py-1 rounded-full">Kelompok 1 – 6</span>
+                            </div>
+                            <h3 id="zd-title" class="text-lg font-extrabold mt-2">Ikhtisar 4 Zona Pengamatan Sekolah</h3>
+                            <p id="zd-subtitle" class="text-xs text-emerald-100 mt-0.5">Tervalidasi oleh I Gusti Ayu Putu Eka Putrini, S.P</p>
+                        </div>
+
+                        <div class="p-4 sm:p-5 space-y-4">
+                            <!-- Parameter Mikroklimat Zona -->
+                            <div class="grid grid-cols-3 gap-2 text-center">
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                    <p class="text-[10px] font-semibold uppercase text-slate-400">Intensitas Cahaya</p>
+                                    <p id="zd-light" class="text-xs sm:text-sm font-bold text-slate-700 mt-0.5">Bervariasi</p>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                    <p class="text-[10px] font-semibold uppercase text-slate-400">Kelembapan</p>
+                                    <p id="zd-humidity" class="text-xs sm:text-sm font-bold text-slate-700 mt-0.5">55% – 90%</p>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                    <p class="text-[10px] font-semibold uppercase text-slate-400">Suhu Rata-rata</p>
+                                    <p id="zd-temp" class="text-xs sm:text-sm font-bold text-slate-700 mt-0.5">27°C – 33°C</p>
+                                </div>
+                            </div>
+
+                            <!-- Target Bukti Evolusi -->
+                            <div>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Target Kajian Bukti Evolusi</h4>
+                                <div id="zd-targets" class="space-y-2 text-xs text-slate-600">
+                                    <div class="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/70">
+                                        <strong class="text-amber-800">Homologi:</strong> Perbandingan struktur modifikasi organ tumbuhan (daun pelindung/duri/sulur) & anggota gerak hewan.
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/70">
+                                        <strong class="text-blue-800">Analogi:</strong> Struktur sayap serangga (kitin) vs burung (modifikasi tungkai), atau alat pertahanan tumbuhan.
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/70">
+                                        <strong class="text-emerald-800">Variasi Fenotipe:</strong> Perbedaan ukuran daun, pigmentasi bunga, & morfologi populasi akibat mikroklimat.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Daftar Spesimen Ter-Geotag di Zona Ini -->
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                        Spesimen Tercatat (<span id="zd-specimen-count">0</span>)
+                                    </h4>
+                                    <button onclick="openInputModalWithCurrentCoord()" class="text-xs font-semibold text-bio-600 hover:text-bio-700 flex items-center gap-1">
+                                        <i data-lucide="map-pin-plus" class="w-3.5 h-3.5"></i> Tambah di Zona Ini
+                                    </button>
+                                </div>
+                                <div id="zone-specimen-list" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                    <!-- Diisi secara dinamis -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- TAB 2: BASIS DATA DIGITAL & PENGKODEAN SPESIMEN (INFORMATIKA)         -->
+        <!-- ===================================================================== -->
+        <section id="tab-database" class="tab-content hidden space-y-5">
+            
+            <!-- Toolbar Filter & Ekspor -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="database" class="w-5 h-5 text-info-600"></i>
+                            Basis Data Geotagging & Variabel Kuantitatif-Kualitatif
+                        </h2>
+                        <p class="text-xs text-slate-500">
+                            Struktur pengkodean standar: <code class="px-1.5 py-0.5 bg-slate-100 rounded text-info-700 font-mono">[ZONA]-[KATEGORI]-[KELOMPOK]-[URUT]</code> • Pembimbing: Ifantri, S.Pd
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="openInputModalWithCurrentCoord()" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-bio-600 hover:bg-bio-700 text-white shadow-sm flex items-center gap-1.5 transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            Tambah Entri Data
+                        </button>
+                        <button onclick="exportToCSV()" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-info-600 hover:bg-info-700 text-white shadow-sm flex items-center gap-1.5 transition">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            Ekspor CSV (Excel / Sheets)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Baris Filter Pencarian -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="filter-search" oninput="renderDatabaseTable()" placeholder="Cari kode, spesies, organ..." class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-info-500">
+                    </div>
+                    <select id="filter-zone" onchange="renderDatabaseTable()" class="px-3 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-info-500">
+                        <option value="ALL">Semua Zona Pengamatan</option>
+                        <option value="ZN-TD">ZN-TD (Taman Depan)</option>
+                        <option value="ZN-HM">ZN-HM (Hutan Mini)</option>
+                        <option value="ZN-KP">ZN-KP (Kebun Praktik)</option>
+                        <option value="ZN-AL">ZN-AL (Area Lembap)</option>
+                    </select>
+                    <select id="filter-category" onchange="renderDatabaseTable()" class="px-3 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-info-500">
+                        <option value="ALL">Semua Kategori Bukti</option>
+                        <option value="HOM">Homologi (HOM)</option>
+                        <option value="ANA">Analogi (ANA)</option>
+                        <option value="VFN">Variasi Fenotipe (VFN)</option>
+                    </select>
+                    <select id="filter-group" onchange="renderDatabaseTable()" class="px-3 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-info-500">
+                        <option value="ALL">Semua Kelompok (K1 - K6)</option>
+                        <option value="K1">Kelompok 1 (K1)</option>
+                        <option value="K2">Kelompok 2 (K2)</option>
+                        <option value="K3">Kelompok 3 (K3)</option>
+                        <option value="K4">Kelompok 4 (K4)</option>
+                        <option value="K5">Kelompok 5 (K5)</option>
+                        <option value="K6">Kelompok 6 (K6)</option>
+                    </select>
+                </div>
+
+                <!-- Statistik Agregat Dinamis (Analisis Kuantitatif) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200/70 text-xs">
+                    <div>
+                        <span class="text-slate-500">Total Entri Terfilter:</span>
+                        <span id="agg-total" class="font-bold text-slate-800 ml-1">0</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">Rata-rata Panjang:</span>
+                        <span id="agg-avg-len" class="font-bold text-info-700 ml-1">0 cm</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">Rata-rata Suhu Zona:</span>
+                        <span id="agg-avg-temp" class="font-bold text-amber-700 ml-1">0 °C</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">Tervalidasi Biologi:</span>
+                        <span id="agg-validated" class="font-bold text-bio-700 ml-1">0 / 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabel Data Terstruktur -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100/90 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                <th class="py-3.5 px-4">Kode Spesimen (PK)</th>
+                                <th class="py-3.5 px-3">Kategori</th>
+                                <th class="py-3.5 px-3">Spesimen & Organ Diamati</th>
+                                <th class="py-3.5 px-3">Variabel Kuantitatif</th>
+                                <th class="py-3.5 px-3">Metadata Geotagging & Mikroklimat</th>
+                                <th class="py-3.5 px-3">Status Validasi Biologi</th>
+                                <th class="py-3.5 px-4 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="database-table-body" class="divide-y divide-slate-100 text-xs sm:text-sm">
+                            <!-- Diisi via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- TAB 3: PEMBAGIAN KELOMPOK & VALIDASI INSTRUMEN                        -->
+        <!-- ===================================================================== -->
+        <section id="tab-kelompok" class="tab-content hidden space-y-6">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Matriks Pembagian Kelompok & Rotasi Zona Pengamatan</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            Setiap kelompok beranggotakan 4–5 siswa (Pengamat Lapangan, Analis Data Digital, Dokumentasi, Desainer Media) dengan 1 Zona Utama dan 1 Zona Sekunder.
+                        </p>
+                    </div>
+                    <span class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+                        Validator: I Gusti Ayu Putu Eka Putrini, S.P
+                    </span>
+                </div>
+
+                <div id="groups-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
+                    <!-- Diisi via JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- TAB 4: KAMUS DATA (INFORMATIKA) & RUBRIK INSTRUMEN (BIOLOGI)          -->
+        <!-- ===================================================================== -->
+        <section id="tab-skema" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Kartu Kamus Data Informatika (Ifantri, S.Pd) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 sm:p-5 bg-info-900 text-white">
+                        <div class="flex items-center gap-2 text-blue-300 text-xs font-semibold uppercase tracking-wider">
+                            <i data-lucide="database" class="w-4 h-4"></i>
+                            Modul Informatika • Ifantri, S.Pd
+                        </div>
+                        <h3 class="text-lg font-bold mt-1">Struktur Basis Data & Aturan Pengkodean</h3>
+                        <p class="text-xs text-blue-200 mt-0.5">Standar normalisasi tabel relasional untuk pengolahan di Google Sheets / Excel</p>
+                    </div>
+                    <div class="p-4 sm:p-5 space-y-4">
+                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 font-mono text-xs">
+                            <p class="font-bold text-slate-700 mb-1">Format Primary Key (Kode Spesimen):</p>
+                            <p class="text-info-700 font-bold text-sm">[KODE_ZONA]-[KATEGORI]-[KELOMPOK]-[NO_URUT]</p>
+                            <p class="text-slate-500 mt-1">Contoh: <span class="text-emerald-700 font-semibold">ZN-TD-HOM-K1-001</span> (Zona Taman Depan, Homologi, Kelompok 1, Urutan 001)</p>
+                        </div>
+
+                        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 text-slate-700 font-bold">
+                                    <tr>
+                                        <th class="p-2.5">Nama Field / Atribut</th>
+                                        <th class="p-2.5">Tipe Data</th>
+                                        <th class="p-2.5">Keterangan & Validasi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr>
+                                        <td class="p-2.5 font-mono font-semibold text-info-700">kode_spesimen</td>
+                                        <td class="p-2.5 font-mono">VARCHAR(20)</td>
+                                        <td class="p-2.5">Primary Key, Unik, Otomatis</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-mono font-semibold">kode_zona</td>
+                                        <td class="p-2.5 font-mono">ENUM</td>
+                                        <td class="p-2.5">ZN-TD, ZN-HM, ZN-KP, ZN-AL</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-mono font-semibold">kategori_bukti</td>
+                                        <td class="p-2.5 font-mono">ENUM</td>
+                                        <td class="p-2.5">HOM (Homologi), ANA (Analogi), VFN (Variasi Fenotipe)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-mono font-semibold">koordinat_gps</td>
+                                        <td class="p-2.5 font-mono">DECIMAL(9,6)</td>
+                                        <td class="p-2.5">Latitude & Longitude SMAN 5 Kota Bima</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-mono font-semibold">panjang_cm / lebar_cm</td>
+                                        <td class="p-2.5 font-mono">FLOAT</td>
+                                        <td class="p-2.5">Variabel kuantitatif morfologi (> 0)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-mono font-semibold">suhu_c / lembap_persen</td>
+                                        <td class="p-2.5 font-mono">FLOAT / INT</td>
+                                        <td class="p-2.5">Metadata mikroklimat saat observasi</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-mono font-semibold">timestamp_observasi</td>
+                                        <td class="p-2.5 font-mono">DATETIME</td>
+                                        <td class="p-2.5">Format ISO 8601 (YYYY-MM-DD HH:MM)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kartu Panduan Validasi Biologi (I Gusti Ayu Putu Eka Putrini, S.P) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 sm:p-5 bg-bio-900 text-white">
+                        <div class="flex items-center gap-2 text-emerald-300 text-xs font-semibold uppercase tracking-wider">
+                            <i data-lucide="microscope" class="w-4 h-4"></i>
+                            Modul Biologi • I Gusti Ayu Putu Eka Putrini, S.P
+                        </div>
+                        <h3 class="text-lg font-bold mt-1">Kriteria Validasi Instrumen & Bukti Evolusi</h3>
+                        <p class="text-xs text-emerald-200 mt-0.5">Acuan verifikasi ilmiah spesimen sebelum dimasukkan ke poster ilmiah</p>
+                    </div>
+                    <div class="p-4 sm:p-5 space-y-3 text-xs sm:text-sm text-slate-600">
+                        <div class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                            <h4 class="font-bold text-emerald-900 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                                1. Validasi Homologi (Evolusi Divergen)
+                            </h4>
+                            <p class="mt-1 text-xs leading-relaxed">
+                                Siswa wajib membuktikan bahwa kedua spesimen memiliki <strong>asal struktur dasar (anatomi/embriologi) yang sama</strong> meskipun fungsinya berbeda (misalnya: modifikasi daun menjadi duri pada kaktus/bougenville vs daun fotosintetik biasa).
+                            </p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200">
+                            <h4 class="font-bold text-blue-900 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                                2. Validasi Analogi (Evolusi Konvergen)
+                            </h4>
+                            <p class="mt-1 text-xs leading-relaxed">
+                                Siswa wajib menunjukkan <strong>kesamaan fungsi adaptif</strong> pada lingkungan serupa, tetapi berasal dari <strong>struktur anatomi/takson yang berbeda jauh</strong> (misalnya: sayap kupu-kupu dari kitin vs sayap burung dari modifikasi tungkai depan bertulang).
+                            </p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200">
+                            <h4 class="font-bold text-amber-900 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-amber-600"></span>
+                                3. Validasi Variasi Fenotipe (Intraspesies)
+                            </h4>
+                            <p class="mt-1 text-xs leading-relaxed">
+                                Pengamatan wajib membandingkan <strong>minimal 3–5 individu dalam satu spesies yang sama</strong> pada kondisi mikroklimat berbeda (misalnya: ukuran daun Asoka di Zona A cahaya penuh vs area ternaungi), disertai bukti foto dengan skala penggaris.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL INPUT / EDIT DATA SPESIMEN & GEOTAGGING                         -->
+    <!-- ===================================================================== -->
+    <div id="specimen-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            
+            <!-- Header Modal -->
+            <div class="px-5 py-4 bg-gradient-to-r from-bio-800 to-info-800 text-white flex items-center justify-between">
+                <div>
+                    <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
+                        <i data-lucide="map-pin-plus" class="w-5 h-5 text-emerald-300"></i>
+                        Input Data Geotagging & Spesimen Evolusi
+                    </h3>
+                    <p class="text-xs text-slate-200">Lengkapi metadata lokasi, variabel kualitatif, dan ukuran kuantitatif</p>
+                </div>
+                <button onclick="closeModal()" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Form Body -->
+            <form id="specimen-form" onsubmit="saveSpecimen(event)" class="p-5 space-y-4 max-h-[80vh] overflow-y-auto text-xs sm:text-sm">
+                
+                <!-- Pratinjau Kode Spesimen Otomatis -->
+                <div class="p-3 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <span class="text-[10px] uppercase tracking-wider text-slate-400 block">Primary Key Otomatis (Format Informatika)</span>
+                        <span id="preview-code" class="font-mono text-base font-bold text-emerald-400">ZN-TD-HOM-K1-007</span>
+                    </div>
+                    <div class="text-right font-mono text-[11px] text-blue-300">
+                        <span id="modal-gps-badge">-8.454320, 118.726510</span>
+                    </div>
+                </div>
+
+                <!-- Baris 1: Zona, Kategori, Kelompok -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Zona Pengamatan *</label>
+                        <select id="inp-zone" onchange="updateCodePreview()" required class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-bio-500">
+                            <option value="ZN-TD">ZN-TD (Taman Depan)</option>
+                            <option value="ZN-HM">ZN-HM (Hutan Mini)</option>
+                            <option value="ZN-KP">ZN-KP (Kebun Praktik)</option>
+                            <option value="ZN-AL">ZN-AL (Area Lembap)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Kategori Bukti *</label>
+                        <select id="inp-category" onchange="updateCodePreview()" required class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-bio-500">
+                            <option value="HOM">Homologi (HOM)</option>
+                            <option value="ANA">Analogi (ANA)</option>
+                            <option value="VFN">Variasi Fenotipe (VFN)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Kelompok Pengamat *</label>
+                        <select id="inp-group" onchange="updateCodePreview()" required class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-bio-500">
+                            <option value="K1">Kelompok 1 (K1)</option>
+                            <option value="K2">Kelompok 2 (K2)</option>
+                            <option value="K3">Kelompok 3 (K3)</option>
+                            <option value="K4">Kelompok 4 (K4)</option>
+                            <option value="K5">Kelompok 5 (K5)</option>
+                            <option value="K6">Kelompok 6 (K6)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Baris 2: Metadata Koordinat Geotagging -->
+                <div class="p-3 rounded-xl bg-blue-50/60 border border-blue-200/80 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-info-900 flex items-center gap-1.5">
+                            <i data-lucide="navigation" class="w-3.5 h-3.5 text-info-600"></i>
+                            Metadata Geotagging (Koordinat Peta & GPS)
+                        </span>
+                        <button type="button" onclick="useRealDeviceGPS(true)" class="text-[11px] font-semibold text-info-700 hover:underline">
+                            Sinkronkan GPS Perangkat
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-600">Latitude (Lintang)</label>
+                            <input type="text" id="inp-lat" required class="w-full px-2.5 py-1.5 text-xs font-mono border border-slate-300 rounded-lg bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-600">Longitude (Bujur)</label>
+                            <input type="text" id="inp-lng" required class="w-full px-2.5 py-1.5 text-xs font-mono border border-slate-300 rounded-lg bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-600">Posisi Peta X (0-800)</label>
+                            <input type="number" id="inp-svg-x" min="20" max="780" required class="w-full px-2.5 py-1.5 text-xs font-mono border border-slate-300 rounded-lg bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-600">Posisi Peta Y (0-540)</label>
+                            <input type="number" id="inp-svg-y" min="20" max="480" required class="w-full px-2.5 py-1.5 text-xs font-mono border border-slate-300 rounded-lg bg-white">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Baris 3: Variabel Kualitatif Biologi -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Spesimen 1 (Nama Lokal & Ilmiah) *</label>
+                        <input type="text" id="inp-sp1" placeholder="Contoh: Bougenville (Bougainvillea sp.)" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-bio-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Spesimen 2 / Pembanding *</label>
+                        <input type="text" id="inp-sp2" placeholder="Contoh: Kamboja (Plumeria sp.) / Individu Teduh" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-bio-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Organ / Bagian yang Diamati *</label>
+                        <input type="text" id="inp-organ" placeholder="Contoh: Modifikasi daun pelindung / Sayap" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-bio-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Jenis Pola Evolusi *</label>
+                        <select id="inp-evolution-type" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-bio-500">
+                            <option value="Evolusi Divergen">Evolusi Divergen (Homologi)</option>
+                            <option value="Evolusi Konvergen">Evolusi Konvergen (Analogi)</option>
+                            <option value="Adaptasi Mikroklimat">Adaptasi Mikroklimat (Variasi Fenotipe)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Persamaan Struktur / Fungsi *</label>
+                        <input type="text" id="inp-sim" placeholder="Contoh: Asal jaringan epidermis daun sama" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-bio-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Perbedaan Adaptasi / Warna *</label>
+                        <input type="text" id="inp-diff" placeholder="Contoh: Fungsi menarik polinator vs fotosintesis" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-bio-500">
+                    </div>
+                </div>
+
+                <!-- Baris 4: Variabel Kuantitatif & Mikroklimat -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Panjang (cm) *</label>
+                        <input type="number" step="0.1" id="inp-length" value="7.5" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-bio-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Lebar (cm) *</label>
+                        <input type="number" step="0.1" id="inp-width" value="3.2" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-bio-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Suhu (°C) *</label>
+                        <input type="number" step="0.1" id="inp-temp" value="31.5" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-bio-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Kelembapan (%) *</label>
+                        <input type="number" id="inp-humidity" value="65" min="10" max="100" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-bio-500">
+                    </div>
+                </div>
+
+                <!-- Tombol Aksi Modal -->
+                <div class="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-bio-600 hover:bg-bio-700 text-white shadow-sm flex items-center gap-1.5 transition">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Simpan ke Basis Data & Peta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- LOGIKA APLIKASI JAVASCRIPT                                            -->
+    <!-- ===================================================================== -->
+    <script>
+        // 1. Metadata 4 Zona Pengamatan SMAN 5 Kota Bima (Tervalidasi Guru Biologi)
+        const ZONES_META = {
+            'ZN-TD': {
+                code: 'ZN-TD',
+                name: 'Zona A: Taman Depan Sekolah',
+                shortName: 'Taman Depan',
+                color: '#d97706',
+                bgGradient: 'from-amber-600 to-orange-600',
+                groups: 'Kelompok 1 & Kelompok 2',
+                light: 'Tinggi (Penuh)',
+                humidity: '55% – 62%',
+                temp: '32°C – 34°C',
+                defaultCoord: { x: 400, y: 432, lat: -8.454520, lng: 118.726450 },
+                targets: [
+                    { label: 'Homologi', desc: 'Modifikasi daun pelindung (braktea) pada Bougenville vs daun normal Kamboja.' },
+                    { label: 'Analogi', desc: 'Sayap kupu-kupu (Papilio sp.) vs sayap lebah madu / burung gereja yang mencari nektar.' },
+                    { label: 'Variasi Fenotipe', desc: 'Perbedaan ukuran dan ketebalan daun Bunga Asoka (Ixora sp.) di area terbuka.' }
+                ]
+            },
+            'ZN-HM': {
+                code: 'ZN-HM',
+                name: 'Zona B: Area Pepohonan / Hutan Mini',
+                shortName: 'Hutan Mini',
+                color: '#059669',
+                bgGradient: 'from-emerald-600 to-teal-700',
+                groups: 'Kelompok 3 & Kelompok 4',
+                light: 'Rendah – Sedang (Ternaungi)',
+                humidity: '72% – 80%',
+                temp: '28°C – 30°C',
+                defaultCoord: { x: 660, y: 210, lat: -8.454050, lng: 118.726890 },
+                targets: [
+                    { label: 'Homologi', desc: 'Struktur batang & percabangan pohon dikotil peneduh vs perdu.' },
+                    { label: 'Analogi', desc: 'Alat pelekat/sulur pada tumbuhan merambat vs akar lekat epifit.' },
+                    { label: 'Variasi Fenotipe', desc: 'Variasi warna dan lebar talus/daun tumbuhan paku & lumut pada sisi batang berbeda.' }
+                ]
+            },
+            'ZN-KP': {
+                code: 'ZN-KP',
+                name: 'Zona C: Kebun Praktik / Green Box',
+                shortName: 'Kebun Praktik',
+                color: '#65a30d',
+                bgGradient: 'from-lime-600 to-emerald-600',
+                groups: 'Kelompok 5 & Kelompok 1 (Rotasi)',
+                light: 'Sedang – Tinggi',
+                humidity: '64% – 72%',
+                temp: '30°C – 32°C',
+                defaultCoord: { x: 400, y: 110, lat: -8.453880, lng: 118.726480 },
+                targets: [
+                    { label: 'Homologi', desc: 'Modifikasi batang/umbi pada tanaman hortikultura (jahe/kunyit vs kentang/ubi).' },
+                    { label: 'Analogi', desc: 'Duri pelindung pada batang jeruk/mawar (modifikasi cabang/epidermis) vs duri kaktus (modifikasi daun).' },
+                    { label: 'Variasi Fenotipe', desc: 'Variasi ukuran buah/daun cabai rawit (Capsicum frutescens) antar-polybag berbeda nutrisi.' }
+                ]
+            },
+            'ZN-AL': {
+                code: 'ZN-AL',
+                name: 'Zona D: Area Lembap & Kolam Sekolah',
+                shortName: 'Area Lembap',
+                color: '#0891b2',
+                bgGradient: 'from-cyan-600 to-blue-700',
+                groups: 'Kelompok 6 & Kelompok 2 (Rotasi)',
+                light: 'Rendah (Teduh)',
+                humidity: '82% – 92%',
+                temp: '26°C – 28°C',
+                defaultCoord: { x: 140, y: 130, lat: -8.453920, lng: 118.726110 },
+                targets: [
+                    { label: 'Homologi', desc: 'Tungkai belakang katak/kodok (amfibi) vs tungkai kadal kebun.' },
+                    { label: 'Analogi', desc: 'Alat pernapasan/adaptasi permukaan lembap pada siput darat vs cacing tanah.' },
+                    { label: 'Variasi Fenotipe', desc: 'Variasi diameter daun keladi/talas (Colocasia sp.) berdasarkan jarak dari sumber air.' }
+                ]
+            }
+        };
+
+        // 2. Data Pembagian Kelompok Siswa (K1 - K6)
+        const GROUPS_DATA = [
+            { id: 'K1', name: 'Kelompok 1', mainZone: 'ZN-TD', subZone: 'ZN-KP', leader: 'Ketua & Pengamat 1', members: 5, instrumentStatus: 'Tervalidasi' },
+            { id: 'K2', name: 'Kelompok 2', mainZone: 'ZN-TD', subZone: 'ZN-AL', leader: 'Ketua & Pengamat 1', members: 5, instrumentStatus: 'Tervalidasi' },
+            { id: 'K3', name: 'Kelompok 3', mainZone: 'ZN-HM', subZone: 'ZN-TD', leader: 'Ketua & Pengamat 1', members: 4, instrumentStatus: 'Tervalidasi' },
+            { id: 'K4', name: 'Kelompok 4', mainZone: 'ZN-HM', subZone: 'ZN-KP', leader: 'Ketua & Pengamat 1', members: 5, instrumentStatus: 'Tervalidasi' },
+            { id: 'K5', name: 'Kelompok 5', mainZone: 'ZN-KP', subZone: 'ZN-HM', leader: 'Ketua & Pengamat 1', members: 4, instrumentStatus: 'Tervalidasi' },
+            { id: 'K6', name: 'Kelompok 6', mainZone: 'ZN-AL', subZone: 'ZN-HM', leader: 'Ketua & Pengamat 1', members: 5, instrumentStatus: 'Tervalidasi' }
+        ];
+
+        // 3. Data Awal Spesimen Ter-Geotagging (Sample Data Terstruktur)
+        const defaultSpecimensData = [
+            {
+                code: 'ZN-TD-HOM-K1-001',
+                zone: 'ZN-TD',
+                category: 'HOM',
+                group: 'K1',
+                sp1: 'Bougenville (Bougainvillea spectabilis)',
+                sp2: 'Kamboja (Plumeria acuminata)',
+                organ: 'Daun Pelindung (Braktea) vs Daun Fotosintetik',
+                evolutionType: 'Evolusi Divergen',
+                similarity: 'Asal perkembangan primordia daun yang sama',
+                difference: 'Braktea berwarna cerah menarik polinator vs daun hijau fotosintesis',
+                length: 5.4,
+                width: 3.1,
+                temp: 33.2,
+                humidity: 58,
+                lat: -8.454512,
+                lng: 118.726380,
+                svgX: 330,
+                svgY: 430,
+                timestamp: '2026-11-20 08:15',
+                validated: true
+            },
+            {
+                code: 'ZN-TD-ANA-K2-002',
+                zone: 'ZN-TD',
+                category: 'ANA',
+                group: 'K2',
+                sp1: 'Kupu-kupu Raja (Danaus sp.)',
+                sp2: 'Burung Gereja (Passer montanus)',
+                organ: 'Sayap (Alat Terbang)',
+                evolutionType: 'Evolusi Konvergen',
+                similarity: 'Fungsi sama untuk terbang mencari makan di area terbuka',
+                difference: 'Eksoskeleton kitin beruas vs modifikasi tulang tungkai depan berbulu',
+                length: 8.2,
+                width: 4.5,
+                temp: 33.5,
+                humidity: 56,
+                lat: -8.454540,
+                lng: 118.726590,
+                svgX: 495,
+                svgY: 425,
+                timestamp: '2026-11-20 08:22',
+                validated: true
+            },
+            {
+                code: 'ZN-HM-VFN-K3-003',
+                zone: 'ZN-HM',
+                category: 'VFN',
+                group: 'K3',
+                sp1: 'Paku Pedang (Nephrolepis exaltata) - Teduh',
+                sp2: 'Paku Pedang (Nephrolepis exaltata) - Tepi Kanopi',
+                organ: 'Ental / Helai Daun Paku',
+                evolutionType: 'Adaptasi Mikroklimat',
+                similarity: 'Spesies identik dalam satu populasi Hutan Mini',
+                difference: 'Individu ternaungi memiliki ental lebih panjang & hijau tua dibanding tepi kanopi',
+                length: 34.5,
+                width: 6.8,
+                temp: 28.4,
+                humidity: 76,
+                lat: -8.454020,
+                lng: 118.726860,
+                svgX: 645,
+                svgY: 185,
+                timestamp: '2026-11-20 08:30',
+                validated: true
+            },
+            {
+                code: 'ZN-HM-HOM-K4-004',
+                zone: 'ZN-HM',
+                category: 'HOM',
+                group: 'K4',
+                sp1: 'Belalang Kayu (Valanga nigricornis)',
+                sp2: 'Semut Rangrang (Oecophylla smaragdina)',
+                organ: 'Tungkai Beruas (Arthropoda)',
+                evolutionType: 'Evolusi Divergen',
+                similarity: 'Struktur dasar segmen kaki serangga (coxa, femur, tibia, tarsus)',
+                difference: 'Tungkai belakang belalang membesar untuk melompat vs tungkai semut untuk mencengkeram',
+                length: 4.8,
+                width: 1.2,
+                temp: 28.9,
+                humidity: 74,
+                lat: -8.454150,
+                lng: 118.726920,
+                svgX: 695,
+                svgY: 295,
+                timestamp: '2026-11-20 08:38',
+                validated: false
+            },
+            {
+                code: 'ZN-KP-ANA-K5-005',
+                zone: 'ZN-KP',
+                category: 'ANA',
+                group: 'K5',
+                sp1: 'Jeruk Nipis (Citrus aurantiifolia)',
+                sp2: 'Kaktus Centong (Opuntia sp.)',
+                organ: 'Duri Pelindung Herbivora',
+                evolutionType: 'Evolusi Konvergen',
+                similarity: 'Fungsi proteksi mekanis dari hewan herbivora',
+                difference: 'Duri jeruk berasal dari modifikasi cabang/batang vs duri kaktus dari modifikasi daun',
+                length: 2.3,
+                width: 0.4,
+                temp: 31.0,
+                humidity: 66,
+                lat: -8.453875,
+                lng: 118.726470,
+                svgX: 390,
+                svgY: 125,
+                timestamp: '2026-11-20 08:45',
+                validated: true
+            },
+            {
+                code: 'ZN-AL-VFN-K6-006',
+                zone: 'ZN-AL',
+                category: 'VFN',
+                group: 'K6',
+                sp1: 'Talas (Colocasia esculenta) - Tepi Kolam',
+                sp2: 'Talas (Colocasia esculenta) - Pinggir Saluran',
+                organ: 'Helai & Tangkai Daun',
+                evolutionType: 'Adaptasi Mikroklimat',
+                similarity: 'Satu spesies talas-talasan di zona kelembapan tinggi',
+                difference: 'Diameter daun di tepi kolam 1.6x lebih lebar akibat ketersediaan air konstan',
+                length: 28.0,
+                width: 19.5,
+                temp: 27.1,
+                humidity: 88,
+                lat: -8.453915,
+                lng: 118.726115,
+                svgX: 135,
+                svgY: 140,
+                timestamp: '2026-11-20 08:52',
+                validated: true
+            }
+        ];
+
+        // Memuat data dari LocalStorage agar tersimpan permanen di browser perangkat
+        let specimensData = JSON.parse(localStorage.getItem('sman5_geotag_data')) || defaultSpecimensData;
+
+        // Fungsi menyimpan perubahan data ke memori lokal
+        function saveToLocal() {
+            localStorage.setItem('sman5_geotag_data', JSON.stringify(specimensData));
+        }
+
+        // State Aplikasi
+        let selectedZone = 'ALL';
+        let pendingCoord = { x: 400, y: 432, lat: -8.454520, lng: 118.726450, zone: 'ZN-TD' };
+
+        // Inisialisasi saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            setupMapInteractions();
+            refreshAllViews();
+        });
+
+        // Fungsi Navigasi Tab
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+                btn.classList.add('text-white/80', 'hover:text-white', 'hover:bg-white/10');
+            });
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            activeBtn.classList.remove('text-white/80', 'hover:text-white', 'hover:bg-white/10');
+            activeBtn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+            
+            lucide.createIcons();
+        }
+
+        // Pengaturan Interaksi Klik & Hover pada Peta SVG
+        function setupMapInteractions() {
+            const svg = document.getElementById('school-map-svg');
+            
+            // Update koordinat saat kursor bergerak di atas peta
+            svg.addEventListener('mousemove', (e) => {
+                const pt = getSVGCoordinates(svg, e);
+                const geo = svgToBimaGPS(pt.x, pt.y);
+                document.getElementById('live-coord-display').textContent = `${geo.lat.toFixed(6)}, ${geo.lng.toFixed(6)}`;
+            });
+
+            // Klik langsung pada kanvas peta untuk menempatkan pin baru
+            svg.addEventListener('click', (e) => {
+                // Abaikan jika mengklik pin yang sudah ada
+                if (e.target.closest('.pin-marker')) return;
+
+                const pt = getSVGCoordinates(svg, e);
+                const geo = svgToBimaGPS(pt.x, pt.y);
+                const detectedZone = detectZoneFromSVG(pt.x, pt.y);
+
+                pendingCoord = {
+                    x: Math.round(pt.x),
+                    y: Math.round(pt.y),
+                    lat: geo.lat,
+                    lng: geo.lng,
+                    zone: detectedZone || (selectedZone !== 'ALL' ? selectedZone : 'ZN-TD')
+                };
+
+                // Tampilkan marker sementara di titik klik
+                const marker = document.getElementById('temp-click-marker');
+                marker.setAttribute('transform', `translate(${pendingCoord.x}, ${pendingCoord.y})`);
+                marker.style.display = 'block';
+
+                if (detectedZone) {
+                    selectZone(detectedZone);
+                    showToast(`Titik plot dipilih di ${ZONES_META[detectedZone].shortName} (${geo.lat.toFixed(5)}, ${geo.lng.toFixed(5)}). Klik "Input Spesimen" untuk mencatat data.`, 'info');
+                }
+            });
+        }
+
+        // Konversi Koordinat Layar ke ViewBox SVG (800x540)
+        function getSVGCoordinates(svg, event) {
+            const rect = svg.getBoundingClientRect();
+            const scaleX = 800 / rect.width;
+            const scaleY = 540 / rect.height;
+            return {
+                x: (event.clientX - rect.left) * scaleX,
+                y: (event.clientY - rect.top) * scaleY
+            };
+        }
+
+        // Simulasi Konversi Koordinat SVG ke Lat/Long Riil Lingkungan SMAN 5 Kota Bima
+        function svgToBimaGPS(x, y) {
+            // Referensi pusat SMAN 5 Kota Bima sekitar -8.45415, 118.72650
+            const baseLat = -8.453750;
+            const baseLng = 118.726000;
+            const lat = baseLat - (y / 540) * 0.000950;
+            const lng = baseLng + (x / 800) * 0.001150;
+            return { lat, lng };
+        }
+
+        // Deteksi otomatis zona berdasarkan koordinat klik SVG
+        function detectZoneFromSVG(x, y) {
+            if (x >= 170 && x <= 630 && y >= 395 && y <= 473) return 'ZN-TD';
+            if (x >= 565 && x <= 760 && y >= 45 && y <= 380) return 'ZN-HM';
+            if (x >= 255 && x <= 545 && y >= 45 && y <= 165) return 'ZN-KP';
+            if (x >= 45 && x <= 235 && ((y >= 45 && y <= 175) || (y >= 305 && y <= 380))) return 'ZN-AL';
+            return null;
+        }
+
+        // Memilih Zona Tertentu
+        function selectZone(zoneCode, event) {
+            if (event) {
+                // Tetap izinkan koordinat klik tercatat jika klik di dalam poligon
+                const svg = document.getElementById('school-map-svg');
+                const pt = getSVGCoordinates(svg, event);
+                const geo = svgToBimaGPS(pt.x, pt.y);
+                pendingCoord = {
+                    x: Math.round(pt.x),
+                    y: Math.round(pt.y),
+                    lat: geo.lat,
+                    lng: geo.lng,
+                    zone: zoneCode
+                };
+                const marker = document.getElementById('temp-click-marker');
+                marker.setAttribute('transform', `translate(${pendingCoord.x}, ${pendingCoord.y})`);
+                marker.style.display = 'block';
+            }
+
+            selectedZone = zoneCode;
+            
+            // Highlight poligon zona aktif
+            document.querySelectorAll('.zone-poly').forEach(el => el.classList.remove('zone-active'));
+            const activePoly = document.getElementById(`poly-${zoneCode}`);
+            if (activePoly) activePoly.classList.add('zone-active');
+
+            updateZoneDetailPanel();
+            renderMapPins();
+        }
+
+        function resetZoneFilter() {
+            selectedZone = 'ALL';
+            document.querySelectorAll('.zone-poly').forEach(el => el.classList.remove('zone-active'));
+            updateZoneDetailPanel();
+            renderMapPins();
+        }
+
+        // Perbarui Panel Detail Zona di Kanan Peta
+        function updateZoneDetailPanel() {
+            const header = document.getElementById('zone-detail-header');
+            const filteredSpecimens = selectedZone === 'ALL' 
+                ? specimensData 
+                : specimensData.filter(s => s.zone === selectedZone);
+
+            if (selectedZone === 'ALL') {
+                header.className = 'p-4 sm:p-5 bg-gradient-to-r from-emerald-700 to-teal-700 text-white';
+                document.getElementById('zd-badge').textContent = 'SEMUA ZONA (4 ZONA)';
+                document.getElementById('zd-groups').textContent = 'Kelompok 1 – 6';
+                document.getElementById('zd-title').textContent = 'Ikhtisar 4 Zona Pengamatan Sekolah';
+                document.getElementById('zd-light').textContent = 'Bervariasi';
+                document.getElementById('zd-humidity').textContent = '55% – 92%';
+                document.getElementById('zd-temp').textContent = '26°C – 34°C';
+                document.getElementById('zd-targets').innerHTML = `
+                    <div class="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/70"><strong class="text-amber-800">Homologi:</strong> Struktur asal sama, fungsi berbeda (evolusi divergen).</div>
+                    <div class="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/70"><strong class="text-blue-800">Analogi:</strong> Fungsi sama, struktur asal berbeda (evolusi konvergen).</div>
+                    <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/70"><strong class="text-emerald-800">Variasi Fenotipe:</strong> Perbedaan morfologi intraspesies akibat mikroklimat.</div>
+                `;
+            } else {
+                const z = ZONES_META[selectedZone];
+                header.className = `p-4 sm:p-5 bg-gradient-to-r ${z.bgGradient} text-white`;
+                document.getElementById('zd-badge').textContent = `KODE ZONA: ${z.code}`;
+                document.getElementById('zd-groups').textContent = z.groups;
+                document.getElementById('zd-title').textContent = z.name;
+                document.getElementById('zd-light').textContent = z.light;
+                document.getElementById('zd-humidity').textContent = z.humidity;
+                document.getElementById('zd-temp').textContent = z.temp;
+                document.getElementById('zd-targets').innerHTML = z.targets.map(t => `
+                    <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                        <strong class="text-slate-800">${t.label}:</strong> ${t.desc}
+                    </div>
+                `).join('');
+            }
+
+            // Daftar Spesimen di Zona Terpilih
+            document.getElementById('zd-specimen-count').textContent = filteredSpecimens.length;
+            const listEl = document.getElementById('zone-specimen-list');
+            
+            if (filteredSpecimens.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 italic py-3 text-center">Belum ada spesimen tercatat di zona ini.</p>`;
+            } else {
+                listEl.innerHTML = filteredSpecimens.map(sp => {
+                    const catBadge = getCategoryBadge(sp.category);
+                    return `
+                        <div class="p-3 rounded-xl border border-slate-200 hover:border-bio-400 bg-slate-50/60 transition flex items-start justify-between gap-2">
+                            <div>
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="font-mono text-[11px] font-bold text-slate-800">${sp.code}</span>
+                                    ${catBadge}
+                                </div>
+                                <p class="text-xs font-semibold text-slate-700 mt-1">${sp.sp1}</p>
+                                <p class="text-[11px] text-slate-500">Organ: ${sp.organ} • ${sp.length}×${sp.width} cm</p>
+                                <p class="text-[10px] font-mono text-info-700 mt-0.5">GPS: ${sp.lat.toFixed(5)}, ${sp.lng.toFixed(5)}</p>
+                            </div>
+                            <span class="shrink-0 text-[10px] px-2 py-0.5 rounded-full font-semibold ${sp.validated ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                                ${sp.validated ? '✓ Valid' : 'Menunggu'}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Render Pin Lokasi di atas SVG Peta
+        function renderMapPins() {
+            const pinsLayer = document.getElementById('pins-layer');
+            const visibleSpecimens = selectedZone === 'ALL' 
+                ? specimensData 
+                : specimensData.filter(s => s.zone === selectedZone);
+
+            pinsLayer.innerHTML = visibleSpecimens.map(sp => {
+                const pinColor = sp.category === 'HOM' ? '#059669' : (sp.category === 'ANA' ? '#2563eb' : '#d97706');
+                return `
+                    <g class="pin-marker" transform="translate(${sp.svgX}, ${sp.svgY})" onclick="inspectSpecimen('${sp.code}')">
+                        <circle cx="0" cy="0" r="13" fill="${pinColor}" fill-opacity="0.22"/>
+                        <path d="M0,-18 C-7,-18 -12,-13 -12,-6 C-12,3 0,14 0,14 C0,14 12,3 12,-6 C12,-13 7,-18 0,-18 Z" 
+                              fill="${pinColor}" stroke="#ffffff" stroke-width="2" filter="url(#shadow)"/>
+                        <circle cx="0" cy="-7" r="3.5" fill="#ffffff"/>
+                        <rect x="-34" y="16" width="68" height="15" rx="4" fill="#0f172a" fill-opacity="0.85"/>
+                        <text x="0" y="26" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" font-weight="bold" fill="#ffffff">${sp.code.split('-').slice(-2).join('-')}</text>
+                    </g>
+                `;
+            }).join('');
+        }
+
+        function inspectSpecimen(code) {
+            const sp = specimensData.find(s => s.code === code);
+            if (!sp) return;
+            showToast(`${sp.code}: ${sp.sp1} vs ${sp.sp2} (${sp.evolutionType}) — GPS: ${sp.lat.toFixed(5)}, ${sp.lng.toFixed(5)}`, 'info');
+        }
+
+        // Modal Input Data Baru
+        function openInputModalWithCurrentCoord() {
+            const modal = document.getElementById('specimen-modal');
+            const z = pendingCoord.zone || (selectedZone !== 'ALL' ? selectedZone : 'ZN-TD');
+            const meta = ZONES_META[z];
+
+            document.getElementById('inp-zone').value = z;
+            document.getElementById('inp-lat').value = pendingCoord.lat.toFixed(6);
+            document.getElementById('inp-lng').value = pendingCoord.lng.toFixed(6);
+            document.getElementById('inp-svg-x').value = pendingCoord.x || meta.defaultCoord.x;
+            document.getElementById('inp-svg-y').value = pendingCoord.y || meta.defaultCoord.y;
+            
+            updateCodePreview();
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('specimen-modal').classList.add('hidden');
+        }
+
+        // Generator Kode Spesimen Otomatis (Struktur Informatika: [ZONA]-[KAT]-[KEL]-[URUT])
+        function updateCodePreview() {
+            const zone = document.getElementById('inp-zone').value;
+            const cat = document.getElementById('inp-category').value;
+            const grp = document.getElementById('inp-group').value;
+            const nextNum = String(specimensData.length + 1).padStart(3, '0');
+            
+            const generated = `${zone}-${cat}-${grp}-${nextNum}`;
+            document.getElementById('preview-code').textContent = generated;
+
+            const lat = document.getElementById('inp-lat').value;
+            const lng = document.getElementById('inp-lng').value;
+            document.getElementById('modal-gps-badge').textContent = `${lat}, ${lng}`;
+        }
+
+        // Ambil Koordinat GPS Perangkat Nyata (Geolocation API)
+        function useRealDeviceGPS(inModal = false) {
+            if (!navigator.geolocation) {
+                showToast('Browser tidak mendukung Geolocation GPS.', 'error');
+                return;
+            }
+            showToast('Mengambil koordinat satelit GPS perangkat...', 'info');
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    pendingCoord.lat = lat;
+                    pendingCoord.lng = lng;
+                    document.getElementById('live-coord-display').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                    
+                    if (inModal) {
+                        document.getElementById('inp-lat').value = lat.toFixed(6);
+                        document.getElementById('inp-lng').value = lng.toFixed(6);
+                        updateCodePreview();
+                    }
+                    showToast(`GPS Terkunci: ${lat.toFixed(6)}, ${lng.toFixed(6)} (Akurasi ±${Math.round(pos.coords.accuracy)}m)`, 'success');
+                },
+                () => {
+                    showToast('Izin lokasi ditolak / sinyal GPS lemah. Menggunakan koordinat simulasi SMAN 5 Kota Bima.', 'error');
+                },
+                { enableHighAccuracy: true, timeout: 6000 }
+            );
+        }
+
+        // Simpan Entri Spesimen Baru
+        function saveSpecimen(e) {
+            e.preventDefault();
+            const code = document.getElementById('preview-code').textContent;
+            const now = new Date();
+            const timestamp = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+            const newEntry = {
+                code: code,
+                zone: document.getElementById('inp-zone').value,
+                category: document.getElementById('inp-category').value,
+                group: document.getElementById('inp-group').value,
+                sp1: document.getElementById('inp-sp1').value.trim(),
+                sp2: document.getElementById('inp-sp2').value.trim(),
+                organ: document.getElementById('inp-organ').value.trim(),
+                evolutionType: document.getElementById('inp-evolution-type').value,
+                similarity: document.getElementById('inp-sim').value.trim(),
+                difference: document.getElementById('inp-diff').value.trim(),
+                length: parseFloat(document.getElementById('inp-length').value),
+                width: parseFloat(document.getElementById('inp-width').value),
+                temp: parseFloat(document.getElementById('inp-temp').value),
+                humidity: parseInt(document.getElementById('inp-humidity').value, 10),
+                lat: parseFloat(document.getElementById('inp-lat').value),
+                lng: parseFloat(document.getElementById('inp-lng').value),
+                svgX: parseInt(document.getElementById('inp-svg-x').value, 10),
+                svgY: parseInt(document.getElementById('inp-svg-y').value, 10),
+                timestamp: timestamp,
+                validated: false
+            };
+
+            specimensData.unshift(newEntry);
+            saveToLocal(); // Simpan ke LocalStorage
+            document.getElementById('specimen-form').reset();
+            document.getElementById('temp-click-marker').style.display = 'none';
+            closeModal();
+            refreshAllViews();
+            showToast(`Data spesimen ${newEntry.code} berhasil disimpan & dipetakan!`, 'success');
+        }
+
+        // Toggle Status Validasi Guru Biologi
+        function toggleValidation(code) {
+            const sp = specimensData.find(s => s.code === code);
+            if (!sp) return;
+            sp.validated = !sp.validated;
+            saveToLocal(); // Simpan ke LocalStorage
+            refreshAllViews();
+            showToast(`Status validasi ${code} diperbarui menjadi: ${sp.validated ? 'Tervalidasi (I Gusti Ayu Putu Eka Putrini, S.P)' : 'Menunggu Validasi'}.`, 'success');
+        }
+
+        // Hapus Entri
+        function deleteSpecimen(code) {
+            specimensData = specimensData.filter(s => s.code !== code);
+            saveToLocal(); // Simpan ke LocalStorage
+            refreshAllViews();
+            showToast(`Entri ${code} telah dihapus dari basis data.`, 'info');
+        }
+
+        // Render Tabel Basis Data Lengkap
+        function renderDatabaseTable() {
+            const search = document.getElementById('filter-search').value.toLowerCase();
+            const fZone = document.getElementById('filter-zone').value;
+            const fCat = document.getElementById('filter-category').value;
+            const fGrp = document.getElementById('filter-group').value;
+
+            const filtered = specimensData.filter(sp => {
+                const matchSearch = sp.code.toLowerCase().includes(search) || 
+                                    sp.sp1.toLowerCase().includes(search) || 
+                                    sp.sp2.toLowerCase().includes(search) ||
+                                    sp.organ.toLowerCase().includes(search);
+                const matchZone = fZone === 'ALL' || sp.zone === fZone;
+                const matchCat = fCat === 'ALL' || sp.category === fCat;
+                const matchGrp = fGrp === 'ALL' || sp.group === fGrp;
+                return matchSearch && matchZone && matchCat && matchGrp;
+            });
+
+            // Hitung Statistik Agregat
+            document.getElementById('agg-total').textContent = filtered.length;
+            const avgLen = filtered.length ? (filtered.reduce((a, b) => a + b.length, 0) / filtered.length).toFixed(1) : 0;
+            const avgTemp = filtered.length ? (filtered.reduce((a, b) => a + b.temp, 0) / filtered.length).toFixed(1) : 0;
+            const validCount = filtered.filter(s => s.validated).length;
+
+            document.getElementById('agg-avg-len').textContent = `${avgLen} cm`;
+            document.getElementById('agg-avg-temp').textContent = `${avgTemp} °C`;
+            document.getElementById('agg-validated').textContent = `${validCount} / ${filtered.length}`;
+
+            const tbody = document.getElementById('database-table-body');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 text-xs">Tidak ada entri data yang sesuai dengan filter pencarian.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(sp => `
+                <tr class="hover:bg-slate-50/90 transition">
+                    <td class="py-3.5 px-4 align-top">
+                        <span class="font-mono text-xs font-bold text-slate-800 block">${sp.code}</span>
+                        <span class="text-[11px] text-slate-500">${ZONES_META[sp.zone].shortName} • ${sp.group}</span>
+                    </td>
+                    <td class="py-3.5 px-3 align-top">
+                        ${getCategoryBadge(sp.category)}
+                        <span class="block text-[11px] text-slate-500 mt-1">${sp.evolutionType}</span>
+                    </td>
+                    <td class="py-3.5 px-3 align-top max-w-xs">
+                        <p class="font-semibold text-slate-800 text-xs">${sp.sp1}</p>
+                        <p class="text-[11px] text-slate-600">vs ${sp.sp2}</p>
+                        <p class="text-[11px] text-bio-700 font-medium mt-0.5">Organ: ${sp.organ}</p>
+                    </td>
+                    <td class="py-3.5 px-3 align-top font-mono text-xs">
+                        <span class="block text-slate-700">P: <strong>${sp.length}</strong> cm</span>
+                        <span class="block text-slate-700">L: <strong>${sp.width}</strong> cm</span>
+                    </td>
+                    <td class="py-3.5 px-3 align-top text-[11px]">
+                        <span class="font-mono text-info-700 block">${sp.lat.toFixed(5)}, ${sp.lng.toFixed(5)}</span>
+                        <span class="text-slate-600 block">Suhu: ${sp.temp}°C • Lembap: ${sp.humidity}%</span>
+                        <span class="text-slate-400 block">${sp.timestamp}</span>
+                    </td>
+                    <td class="py-3.5 px-3 align-top">
+                        <button onclick="toggleValidation('${sp.code}')" title="Klik untuk ubah status validasi Guru Biologi" class="px-2.5 py-1 rounded-full text-[11px] font-semibold transition ${sp.validated ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-amber-100 text-amber-800 hover:bg-amber-200'}">
+                            ${sp.validated ? '✓ Tervalidasi Biologi' : '⏳ Belum Divalidasi'}
+                        </button>
+                    </td>
+                    <td class="py-3.5 px-4 align-top text-right">
+                        <button onclick="deleteSpecimen('${sp.code}')" class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition" title="Hapus Data">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Render Kartu Kelompok (Tab 3)
+        function renderGroupsGrid() {
+            const container = document.getElementById('groups-grid');
+            container.innerHTML = GROUPS_DATA.map(g => {
+                const count = specimensData.filter(s => s.group === g.id).length;
+                const mainZ = ZONES_META[g.mainZone];
+                const subZ = ZONES_META[g.subZone];
+                return `
+                    <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:shadow-md transition space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded-xl bg-slate-900 text-white font-mono text-xs font-bold">${g.id} — ${g.name}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">✓ ${g.instrumentStatus}</span>
+                        </div>
+                        <div class="space-y-1.5 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Zona Fokus Utama:</span>
+                                <span class="font-bold text-slate-800">${mainZ.code} (${mainZ.shortName})</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Zona Rotasi Sekunder:</span>
+                                <span class="font-semibold text-slate-700">${subZ.code} (${subZ.shortName})</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Kontribusi Basis Data:</span>
+                                <span class="font-bold text-info-700">${count} Spesimen Ter-geotag</span>
+                            </div>
+                        </div>
+                        <div class="pt-2 border-t border-slate-200/70 flex flex-wrap gap-1 text-[10px] text-slate-600">
+                            <span class="px-2 py-0.5 bg-white border border-slate-200 rounded-md">Pengamat Lapangan</span>
+                            <span class="px-2 py-0.5 bg-white border border-slate-200 rounded-md">Analis Data Digital</span>
+                            <span class="px-2 py-0.5 bg-white border border-slate-200 rounded-md">Dokumentasi</span>
+                            <span class="px-2 py-0.5 bg-white border border-slate-200 rounded-md">Desainer Media</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Helper Badge Kategori
+        function getCategoryBadge(cat) {
+            if (cat === 'HOM') return '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">HOMOLOGI</span>';
+            if (cat === 'ANA') return '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-800">ANALOGI</span>';
+            return '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800">VARIASI FENOTIPE</span>';
+        }
+
+        // Perbarui Seluruh Tampilan & Angka Statistik
+        function refreshAllViews() {
+            document.getElementById('badge-count').textContent = specimensData.length;
+            document.getElementById('stat-zn-td').textContent = specimensData.filter(s => s.zone === 'ZN-TD').length;
+            document.getElementById('stat-zn-hm').textContent = specimensData.filter(s => s.zone === 'ZN-HM').length;
+            document.getElementById('stat-zn-kp').textContent = specimensData.filter(s => s.zone === 'ZN-KP').length;
+            document.getElementById('stat-zn-al').textContent = specimensData.filter(s => s.zone === 'ZN-AL').length;
+
+            renderMapPins();
+            updateZoneDetailPanel();
+            renderDatabaseTable();
+            renderGroupsGrid();
+        }
+
+        // Ekspor Basis Data ke File CSV (Untuk Excel / Google Sheets)
+        function exportToCSV() {
+            const headers = [
+                'Kode_Spesimen', 'Kode_Zona', 'Kategori_Bukti', 'Kelompok', 
+                'Spesimen_1', 'Spesimen_2', 'Organ_Diamati', 'Jenis_Evolusi',
+                'Persamaan', 'Perbedaan', 'Panjang_cm', 'Lebar_cm',
+                'Suhu_C', 'Kelembapan_Persen', 'Latitude', 'Longitude',
+                'Waktu_Observasi', 'Status_Validasi_Biologi'
+            ];
+
+            const rows = specimensData.map(s => [
+                s.code, s.zone, s.category, s.group,
+                `"${s.sp1}"`, `"${s.sp2}"`, `"${s.organ}"`, `"${s.evolutionType}"`,
+                `"${s.similarity}"`, `"${s.difference}"`, s.length, s.width,
+                s.temp, s.humidity, s.lat, s.lng,
+                `"${s.timestamp}"`, s.validated ? 'Tervalidasi' : 'Belum_Divalidasi'
+            ]);
+
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + headers.join(",") + "\n" 
+                + rows.map(e => e.join(",")).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Basis_Data_Geotagging_Evolusi_SMAN5_KotaBima.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast('File CSV berhasil diunduh! Siap dibuka di Google Sheets atau Microsoft Excel.', 'success');
+        }
+
+        // Sistem Notifikasi Toast Non-Blocking
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-900 border-emerald-500' : (type === 'error' ? 'bg-red-900 border-red-500' : 'bg-slate-900 border-blue-500');
+            
+            toast.className = `pointer-events-auto p-3.5 rounded-xl border-l-4 ${bgClass} text-white text-xs shadow-xl flex items-start justify-between gap-3 transition-all duration-300`;
+            toast.innerHTML = `
+                <span class="leading-relaxed">${message}</span>
+                <button onclick="this.parentElement.remove()" class="text-white/70 hover:text-white font-bold">✕</button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                if (toast.parentElement) toast.remove();
+            }, 5000);
+        }
+
+        // ==========================================
+        // SISTEM INSTALL APLIKASI PWA (Add to Home Screen)
+        // ==========================================
+        let deferredPrompt;
+        const installBtn = document.getElementById('btn-install-app');
+
+        // Deteksi jika browser siap menginstal aplikasi
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Mencegah prompt bawaan Chrome muncul secara otomatis
+            e.preventDefault();
+            // Simpan event agar bisa dipicu oleh tombol kita
+            deferredPrompt = e;
+            // Tampilkan tombol "Install App" di header
+            installBtn.classList.remove('hidden');
+            installBtn.classList.add('flex');
+        });
+
+        // Logika saat tombol Install diklik
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                // Munculkan dialog konfirmasi instalasi bawaan HP
+                deferredPrompt.prompt();
+                // Tunggu respon pengguna
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('Aplikasi berhasil diinstal');
+                }
+                // Hapus event karena hanya bisa dipakai sekali
+                deferredPrompt = null;
+                // Sembunyikan tombol lagi
+                installBtn.classList.add('hidden');
+                installBtn.classList.remove('flex');
+            }
+        });
+
+        // Deteksi jika aplikasi sudah berjalan dalam mode standalone (sudah terinstal)
+        window.addEventListener('appinstalled', () => {
+            installBtn.classList.add('hidden');
+            installBtn.classList.remove('flex');
+            showToast('GeoEvolusi berhasil ditambahkan ke Layar Utama HP Anda!', 'success');
+        });
+    </script>
+</body>
+</html>
