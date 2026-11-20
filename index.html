@@ -12,12 +12,65 @@
     <meta name="application-name" content="GeoEvolusi">
     <meta name="theme-color" content="#064e3b">
     
-    <!-- Inline Web App Manifest (Memaksa Chrome mengenali sebagai Aplikasi) -->
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiR2VvRXZvbHVzaSBTTUFOIDUgQmltYSIsInNob3J0X25hbWUiOiJHZW9Fdm9sdXNpIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwNjRlM2IiLCJ0aGVtZV9jb2xvciI6IiMwNjRlM2IiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCc+PHJlY3Qgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnIHJ4PScyMicgZmlsbD0nJTIzMDY0ZTNiJy8+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzQ1JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPSd3aGl0ZScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnPvCfjI08L3RleHQ+PC9zdmc+Iiwic2l6ZXMiOiIxOTJ4MTkyIDUxMng1MTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCIsInB1cnBvc2UiOiJhbnkgbWFza2FibGUifV19">
+    <!-- Script Pembangun Aplikasi & Ikon Dinamis -->
+    <script>
+        // ========================================================
+        // KONFIGURASI IKON APLIKASI (SILAKAN GANTI EMOJI DI SINI)
+        // ========================================================
+        const APP_EMOJI = "🧬"; // Pilihan lain: 🌍, 🌿, 🔬, 🦋, 🦖
+        const APP_BG_COLOR = "#064e3b";
 
-    <!-- Ikon Aplikasi SVG Berbasis Data URI (Tidak Perlu File Gambar Terpisah) -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23064e3b%22/><text x=%2250%22 y=%2265%22 font-size=%2245%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22>🌍</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23064e3b%22/><text x=%2250%22 y=%2265%22 font-size=%2245%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22>🌍</text></svg>">
+        // Membangun gambar PNG agar diakui sebagai Aplikasi Native (WebAPK) tanpa lencana Chrome
+        function createIconBase64(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = APP_BG_COLOR;
+            const r = size * 0.22; // Rounded corner
+            ctx.beginPath();
+            ctx.moveTo(r, 0); ctx.lineTo(size - r, 0); ctx.quadraticCurveTo(size, 0, size, r);
+            ctx.lineTo(size, size - r); ctx.quadraticCurveTo(size, size, size - r, size);
+            ctx.lineTo(r, size); ctx.quadraticCurveTo(0, size, 0, size - r);
+            ctx.lineTo(0, r); ctx.quadraticCurveTo(0, 0, r, 0);
+            ctx.closePath(); ctx.fill();
+            
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = `${size * 0.55}px sans-serif`;
+            ctx.fillText(APP_EMOJI, size / 2, size / 2 + (size * 0.05));
+            
+            return canvas.toDataURL('image/png');
+        }
+
+        const icon192 = createIconBase64(192);
+        const icon512 = createIconBase64(512);
+
+        document.head.insertAdjacentHTML('beforeend', `<link rel="icon" href="${icon192}">`);
+        document.head.insertAdjacentHTML('beforeend', `<link rel="apple-touch-icon" href="${icon192}">`);
+
+        const manifestJSON = {
+            name: "GeoEvolusi SMAN 5 Bima",
+            short_name: "GeoEvolusi",
+            start_url: window.location.pathname,
+            display: "standalone",
+            background_color: APP_BG_COLOR,
+            theme_color: APP_BG_COLOR,
+            icons: [
+                { src: icon192, sizes: "192x192", type: "image/png", purpose: "any maskable" },
+                { src: icon512, sizes: "512x512", type: "image/png", purpose: "any maskable" }
+            ]
+        };
+
+        const manifestData = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifestJSON));
+        document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${manifestData}">`);
+
+        // Dummy Service Worker Wajib WebAPK
+        const swBlob = new Blob(["self.addEventListener('fetch', ()=>{});"], { type: 'text/javascript' });
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+    </script>
 
     <title>Peta Digital Zona Pengamatan & Geotagging Evolusi - SMAN 5 Kota Bima</title>
     <!-- Tailwind CSS -->
